@@ -86,6 +86,8 @@ services:
       - postgres
       - redis
     command: celery -A app.tasks.celery_app worker --loglevel=info -Q default,notifications -c 2
+    healthcheck:
+      disable: true
 
   # ── Next.js Frontend ──────────────────────────────────────────────────────
   frontend:
