@@ -15,7 +15,7 @@ const COUNTRIES = [
   { name: "Чорногорія", iso: "MNE", color: "#ff6b35", interactive: true  },
 ] as const;
 
-const GEO_BASE = "https://raw.githubusercontent.com/johan/world.geo.json/master/countries";
+const GEO_BASE = "/geo";
 
 export default function BalkansDesignMap({ onMontenegroSelect }: BalkansDesignMapProps) {
   const mapRef  = useRef<HTMLDivElement>(null);
