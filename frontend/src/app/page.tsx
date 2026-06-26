@@ -42,14 +42,16 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 font-sans overflow-hidden">
       {/* Top Navigation */}
-      <nav className="absolute top-0 left-0 right-0 z-50 flex items-center justify-between px-8 py-4 bg-black/30 backdrop-blur-md border-b border-white/5">
-        <div className="flex items-center gap-2">
-          <span className="text-2xl">🏔️</span>
-          <span className="text-xl font-bold text-white">MonteLand</span>
+      <nav className="absolute top-0 left-0 right-0 z-50 flex items-center justify-between px-4 md:px-8 py-3 md:py-4 bg-black/40 backdrop-blur-md border-b border-white/10">
+        {/* Logo */}
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="text-xl md:text-2xl">🏔️</span>
+          <span className="text-lg md:text-xl font-bold text-white">MonteLand</span>
         </div>
 
-        <div className="flex-1 mx-12">
-          <div className="relative">
+        {/* Search bar — desktop only */}
+        <div className="hidden md:flex flex-1 mx-8 lg:mx-12">
+          <div className="relative w-full">
             <input
               type="text"
               placeholder={lang === "uk" ? "Пошук по місту, ділянці..." : lang === "ru" ? "Поиск по городу, участку..." : "Search by city, plot..."}
@@ -63,7 +65,8 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
+        {/* Desktop actions */}
+        <div className="hidden md:flex items-center gap-4 shrink-0">
           <div className="flex items-center gap-1 bg-white/10 rounded-full p-1 border border-white/10">
             {(["uk", "ru", "en"] as Lang[]).map((l) => (
               <button
@@ -77,7 +80,6 @@ export default function Home() {
               </button>
             ))}
           </div>
-
           <button
             onClick={() => setBuyer(true)}
             className="px-4 py-2 text-sm font-medium text-white border border-white/20 rounded-full hover:bg-white/10 transition-colors"
@@ -91,13 +93,71 @@ export default function Home() {
             {tr.btn_sell}
           </button>
         </div>
+
+        {/* Mobile actions */}
+        <div className="flex md:hidden items-center gap-2 shrink-0">
+          {/* Compact language switcher */}
+          <div className="flex items-center gap-0.5 bg-white/10 rounded-full p-0.5 border border-white/10">
+            {(["uk", "ru", "en"] as Lang[]).map((l) => (
+              <button
+                key={l}
+                onClick={() => setLang(l)}
+                className={`px-2 py-1 text-[11px] font-semibold rounded-full transition-all ${
+                  lang === l ? "bg-white/25 text-white" : "text-white/50 hover:text-white/70"
+                }`}
+              >
+                {langLabels[l]}
+              </button>
+            ))}
+          </div>
+          {/* Sell button */}
+          <button
+            onClick={() => setSell(true)}
+            className="px-3 py-1.5 text-xs font-semibold text-white bg-orange-500 rounded-full hover:bg-orange-600 transition-colors whitespace-nowrap"
+          >
+            {tr.btn_sell}
+          </button>
+        </div>
       </nav>
 
       {/* Main Content */}
-      <div className="flex h-screen pt-24">
+      <div className="flex h-screen pt-14 md:pt-[72px]">
         {!showMontenegroMap ? (
           /* Stage 1: Balkans Design Map */
-          <BalkansDesignMap onMontenegroSelect={handleMontenegroSelect} />
+          <div className="relative w-full h-full">
+            <BalkansDesignMap onMontenegroSelect={handleMontenegroSelect} />
+
+            {/* Mobile hero overlay — bottom panel */}
+            <div className="absolute bottom-0 left-0 right-0 md:hidden z-20 bg-gradient-to-t from-black/80 via-black/50 to-transparent p-5 pt-10">
+              <p className="text-white/70 text-xs uppercase tracking-widest mb-1">
+                {lang === "uk" ? "Земельний ринок" : lang === "ru" ? "Рынок земли" : "Land market"}
+              </p>
+              <h2 className="text-white text-xl font-bold mb-3">
+                {lang === "uk" ? "Земля в Чорногорії" : lang === "ru" ? "Земля в Черногории" : "Land in Montenegro"}
+              </h2>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleMontenegroSelect}
+                  className="flex-1 py-2.5 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-xl transition-colors"
+                >
+                  {lang === "uk" ? "🗺 Переглянути карту" : lang === "ru" ? "🗺 Открыть карту" : "🗺 View map"}
+                </button>
+                <button
+                  onClick={() => setBuyer(true)}
+                  className="flex-1 py-2.5 bg-white/10 border border-white/20 text-white text-sm font-semibold rounded-xl transition-colors"
+                >
+                  {tr.btn_search}
+                </button>
+              </div>
+            </div>
+
+            {/* Desktop hint */}
+            <div className="hidden md:block absolute bottom-8 left-1/2 -translate-x-1/2 z-20 text-center pointer-events-none">
+              <p className="text-white/50 text-sm">
+                {lang === "uk" ? "Натисніть на Чорногорію щоб переглянути ділянки" : lang === "ru" ? "Нажмите на Черногорию для просмотра участков" : "Click Montenegro to explore plots"}
+              </p>
+            </div>
+          </div>
         ) : (
           /* Stage 2: Interactive Montenegro Map with Sidebars */
           <>
