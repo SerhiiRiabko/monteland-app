@@ -1,0 +1,27 @@
+.env
+*.pyc
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# Frontend
+node_modules/
+.next/
+out/
+frontend/.env.local
+
+# Uploads
+backend/uploads/
+
+# DB volumes (local dev)
+postgres_data/
+redis_data/
+
+# OS
+.DS_Store
+Thumbs.db
