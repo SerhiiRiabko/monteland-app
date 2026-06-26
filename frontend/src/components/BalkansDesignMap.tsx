@@ -6,17 +6,19 @@ interface BalkansDesignMapProps {
 }
 
 const COUNTRIES = [
-  { name: "Хорватия", color: "#3b82f6", opacity: 0.6 },
-  { name: "Сербия", color: "#8b5cf6", opacity: 0.6 },
-  { name: "Черногория", color: "#ff6b35", opacity: 0.8, highlight: true },
-  { name: "Босния", color: "#06b6d4", opacity: 0.6 },
-  { name: "Словения", color: "#10b981", opacity: 0.6 },
-  { name: "Албания", color: "#f59e0b", opacity: 0.6 },
-  { name: "Греция", color: "#ec4899", opacity: 0.6 },
-];
+  { name: "Хорватія",   iso: "HRV", color: "#3b82f6", interactive: false },
+  { name: "Сербія",     iso: "SRB", color: "#8b5cf6", interactive: false },
+  { name: "Босния",     iso: "BIH", color: "#06b6d4", interactive: false },
+  { name: "Словенія",   iso: "SVN", color: "#10b981", interactive: false },
+  { name: "Албанія",    iso: "ALB", color: "#f59e0b", interactive: false },
+  { name: "Греція",     iso: "GRC", color: "#ec4899", interactive: false },
+  { name: "Чорногорія", iso: "MNE", color: "#ff6b35", interactive: true  },
+] as const;
+
+const GEO_BASE = "https://raw.githubusercontent.com/johan/world.geo.json/master/countries";
 
 export default function BalkansDesignMap({ onMontenegroSelect }: BalkansDesignMapProps) {
-  const mapRef = useRef<HTMLDivElement>(null);
+  const mapRef  = useRef<HTMLDivElement>(null);
   const mapInst = useRef<any>(null);
 
   useEffect(() => {
@@ -27,15 +29,14 @@ export default function BalkansDesignMap({ onMontenegroSelect }: BalkansDesignMa
       await import("leaflet/dist/leaflet.css");
 
       const map = L.map(mapRef.current!, {
-        center: [43.5, 18.0],
-        zoom: 6.5,
+        center: [42.5, 20.0],
+        zoom: 6,
         zoomControl: true,
         attributionControl: false,
         scrollWheelZoom: true,
       });
       mapInst.current = map;
 
-      // Satellite tiles
       L.tileLayer(
         "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
         { maxZoom: 18 }
@@ -43,128 +44,90 @@ export default function BalkansDesignMap({ onMontenegroSelect }: BalkansDesignMa
 
       L.tileLayer(
         "https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}",
-        { maxZoom: 18, opacity: 0.8 }
+        { maxZoom: 18, opacity: 0.7 }
       ).addTo(map);
 
-      // Add Balkans regions overlay (simplified)
-      const regions: {
-        name: string;
-        bounds: [[number, number], [number, number]];
-        color: string;
-        interactive?: boolean;
-      }[] = [
-        {
-          name: "Хорватия",
-          bounds: [[42.0, 13.5], [47.0, 20.0]],
-          color: "#3b82f6",
-        },
-        {
-          name: "Сербия",
-          bounds: [[43.5, 18.0], [46.5, 23.0]],
-          color: "#8b5cf6",
-        },
-        {
-          name: "Черногория",
-          bounds: [[41.85, 18.4], [42.88, 19.45]],
-          color: "#ff6b35",
-          interactive: true,
-        },
-        {
-          name: "Босния",
-          bounds: [[42.5, 15.7], [45.0, 19.6]],
-          color: "#06b6d4",
-        },
-        {
-          name: "Албания",
-          bounds: [[39.6, 19.3], [42.65, 21.0]],
-          color: "#f59e0b",
-        },
-        {
-          name: "Греция",
-          bounds: [[34.76, 20.75], [41.5, 28.6]],
-          color: "#ec4899",
-        },
-      ];
+      // Fetch all country GeoJSON in parallel
+      const results = await Promise.allSettled(
+        COUNTRIES.map(async (c) => {
+          const res = await fetch(`${GEO_BASE}/${c.iso}.geo.json`);
+          if (!res.ok) throw new Error(`${c.iso} failed`);
+          return { country: c, geo: await res.json() };
+        })
+      );
 
-      regions.forEach((region) => {
-        const rect = L.rectangle(region.bounds, {
-          color: region.color,
-          weight: 2,
-          fillColor: region.color,
-          fillOpacity: region.interactive ? 0.7 : 0.4,
-          className: region.interactive ? "cursor-pointer hover:opacity-80" : "",
+      for (const result of results) {
+        if (result.status !== "fulfilled") continue;
+        const { country, geo } = result.value;
+
+        const layer = L.geoJSON(geo, {
+          style: {
+            color: country.color,
+            weight: 2,
+            fillColor: country.color,
+            fillOpacity: country.interactive ? 0.65 : 0.35,
+          },
+          ...(country.interactive ? { className: "cursor-pointer" } : {}),
         } as any);
 
-        rect.addTo(map);
+        layer.addTo(map);
 
-        if (region.interactive) {
-          rect.on("click", () => {
-            onMontenegroSelect();
-          });
+        // Calculate visual center for label
+        const bounds = layer.getBounds();
+        const center = bounds.getCenter();
 
-          // Add label for Montenegro
-          const bounds = region.bounds;
-          const center = [
-            (bounds[0][0] + bounds[1][0]) / 2,
-            (bounds[0][1] + bounds[1][1]) / 2,
-          ] as [number, number];
+        if (country.interactive) {
+          layer.on("click", onMontenegroSelect);
 
           L.marker(center, {
             icon: L.divIcon({
               className: "",
               html: `<div style="
-                text-align: center;
-                background: rgba(255, 107, 53, 0.9);
-                padding: 12px 16px;
-                border-radius: 8px;
-                border: 2px solid white;
-                cursor: pointer;
-                transition: all 0.3s ease;
+                text-align:center;
+                background:rgba(255,107,53,0.92);
+                padding:10px 14px;
+                border-radius:8px;
+                border:2px solid white;
+                cursor:pointer;
+                box-shadow:0 2px 8px rgba(0,0,0,0.4);
+                white-space:nowrap;
               ">
-                <div style="
-                  color: white;
-                  font-weight: 700;
-                  font-size: 14px;
-                  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
-                ">🏔️ Черногория</div>
+                <div style="color:white;font-weight:700;font-size:13px;text-shadow:0 1px 3px rgba(0,0,0,0.5);">
+                  🏔️ Чорногорія
+                </div>
+                <div style="color:rgba(255,255,255,0.8);font-size:10px;margin-top:2px;">
+                  Натисніть
+                </div>
               </div>`,
-              iconSize: [140, 50],
-              iconAnchor: [70, 25],
-              popupAnchor: [0, -25],
+              iconSize: [130, 52],
+              iconAnchor: [65, 26],
             }),
+            interactive: true,
           })
             .addTo(map)
-            .on("click", () => {
-              onMontenegroSelect();
-            });
+            .on("click", onMontenegroSelect);
         } else {
-          // Add country labels
-          const bounds = region.bounds;
-          const center = [
-            (bounds[0][0] + bounds[1][0]) / 2,
-            (bounds[0][1] + bounds[1][1]) / 2,
-          ] as [number, number];
-
           L.marker(center, {
             icon: L.divIcon({
               className: "",
               html: `<span style="
-                font-size: 11px;
-                font-weight: 700;
-                color: white;
-                text-shadow: 0 1px 3px rgba(0,0,0,0.8);
-                pointer-events: none;
-                text-transform: uppercase;
-              ">${region.name}</span>`,
-              iconSize: [80, 20],
-              iconAnchor: [40, 10],
+                font-size:11px;
+                font-weight:700;
+                color:white;
+                text-shadow:0 1px 3px rgba(0,0,0,0.9);
+                pointer-events:none;
+                text-transform:uppercase;
+                white-space:nowrap;
+              ">${country.name}</span>`,
+              iconSize: [100, 20],
+              iconAnchor: [50, 10],
             }),
             interactive: false,
           }).addTo(map);
         }
-      });
+      }
 
-      L.control.attribution({ prefix: "© Esri · GADM" }).addTo(map);
+      L.control.attribution({ prefix: "© Esri · GitHub/johan" }).addTo(map);
     };
 
     init();
@@ -178,6 +141,6 @@ export default function BalkansDesignMap({ onMontenegroSelect }: BalkansDesignMa
   }, [onMontenegroSelect]);
 
   return (
-    <div ref={mapRef} style={{ height: "100%", width: "100%" }} className="rounded-none overflow-hidden" />
+    <div ref={mapRef} style={{ height: "100%", width: "100%" }} className="overflow-hidden" />
   );
 }
