@@ -78,34 +78,6 @@ export default function BalkansDesignMap({ onMontenegroSelect }: BalkansDesignMa
 
         if (country.interactive) {
           layer.on("click", onMontenegroSelect);
-
-          L.marker(center, {
-            icon: L.divIcon({
-              className: "",
-              html: `<div style="
-                text-align:center;
-                background:rgba(255,107,53,0.92);
-                padding:10px 14px;
-                border-radius:8px;
-                border:2px solid white;
-                cursor:pointer;
-                box-shadow:0 2px 8px rgba(0,0,0,0.4);
-                white-space:nowrap;
-              ">
-                <div style="color:white;font-weight:700;font-size:13px;text-shadow:0 1px 3px rgba(0,0,0,0.5);">
-                  🏔️ Чорногорія
-                </div>
-                <div style="color:rgba(255,255,255,0.8);font-size:10px;margin-top:2px;">
-                  Натисніть
-                </div>
-              </div>`,
-              iconSize: [130, 52],
-              iconAnchor: [65, 26],
-            }),
-            interactive: true,
-          })
-            .addTo(map)
-            .on("click", onMontenegroSelect);
         } else {
           L.marker(center, {
             icon: L.divIcon({
